@@ -60,7 +60,7 @@ func OpenAPIGen() error {
 }
 
 // OpenAPIGenWithIgnoreFlag generates OpenAPI validation specs for all CRD's in dirs.
-func OpenAPIGenWithIgnoreFlag(ignoreGroups []string) error {
+func OpenAPIGenWithIgnoreFlag(ignoreGVK []string) error {
 	s := &scaffold.Scaffold{}
 	cfg, crds, err := preScaffoldSetup()
 	if err != nil {
@@ -68,6 +68,7 @@ func OpenAPIGenWithIgnoreFlag(ignoreGroups []string) error {
 	}
 	for _, crd := range crds {
 		g, v, k := crd.Spec.Group, crd.Spec.Version, crd.Spec.Names.Kind
+		doScffold := searchGroupIgnoreList(g, ignoreGVK)
 		if v == "" {
 			if len(crd.Spec.Versions) != 0 {
 				v = crd.Spec.Versions[0].Name
@@ -75,18 +76,25 @@ func OpenAPIGenWithIgnoreFlag(ignoreGroups []string) error {
 				return fmt.Errorf("crd of group %s kind %s has no version", g, k)
 			}
 		}
-		for _, group := range ignoreGroups {
-			if g != group {
-				err := doScffolding(g, v, k, s, cfg)
-				if err != nil {
-					return err
-				}
+		if !doScffold {
+			err := doScffolding(g, v, k, s, cfg)
+			if err != nil {
+				return err
 			}
 		}
 	}
 
 	log.Info("Code-generation complete.")
 	return nil
+}
+
+func searchGroupIgnoreList(value string, ignore []string) bool {
+	for _, g := range ignore {
+		if g == value {
+			return true
+		}
+	}
+	return false
 }
 
 func preScaffoldSetup() (*input.Config, []*v1beta1.CustomResourceDefinition, error) {
