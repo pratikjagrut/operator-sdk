@@ -22,7 +22,8 @@ import (
 )
 
 var (
-	ignore []string
+	skipGeneration bool
+	group          []string
 )
 
 func newGenerateOpenAPICmd() *cobra.Command {
@@ -50,7 +51,8 @@ Example:
 		RunE: openAPIFunc,
 	}
 
-	apiCmd.Flags().StringSliceVar(&ignore, "ignore", nil, "Specify group to ignore genrating openapis")
+	apiCmd.Flags().BoolVar(&skipGeneration, "skip-generation", false, "Skips creating scafold for specified GKV")
+	apiCmd.Flags().StringSliceVar(&group, "group", nil, "Specify group to ignore genrating openapis")
 	return apiCmd
 }
 
@@ -59,8 +61,11 @@ func openAPIFunc(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("command %s doesn't accept any arguments", cmd.CommandPath())
 	}
 
-	if len(ignore) != 0 {
-		return genutil.OpenAPIGenWithIgnoreFlag(ignore)
+	if skipGeneration {
+		return genutil.OpenAPIGenWithIgnoreFlag(group)
+	}
+	if len(group) > 0 {
+		return fmt.Errorf("can not use --group flag without --skip-generation flag")
 	}
 	return genutil.OpenAPIGen()
 }
