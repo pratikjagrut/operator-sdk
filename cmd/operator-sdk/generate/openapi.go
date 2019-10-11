@@ -21,8 +21,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var (
+	ignore []string
+)
+
 func newGenerateOpenAPICmd() *cobra.Command {
-	return &cobra.Command{
+	apiCmd := &cobra.Command{
 		Use:   "openapi",
 		Short: "Generates OpenAPI specs for API's",
 		Long: `generate openapi generates OpenAPI validation specs in Go from tagged types
@@ -45,6 +49,9 @@ Example:
 `,
 		RunE: openAPIFunc,
 	}
+
+	apiCmd.Flags().StringSliceVar(&ignore, "ignore", nil, "Specify group to ignore genrating openapis")
+	return apiCmd
 }
 
 func openAPIFunc(cmd *cobra.Command, args []string) error {
@@ -52,5 +59,8 @@ func openAPIFunc(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("command %s doesn't accept any arguments", cmd.CommandPath())
 	}
 
+	if len(ignore) != 0 {
+		return genutil.OpenAPIGenWithIgnoreFlag(ignore)
+	}
 	return genutil.OpenAPIGen()
 }
